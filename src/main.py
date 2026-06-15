@@ -3,6 +3,7 @@ import sympy as sp
 import numpy as np
 import matplotlib.pyplot as plt
 x, y = sp.symbols('x y')
+
 #Luiz Fernando 
 def metodo_barreira(funcao, restricoes, variaveis, ponto_inicial,
                      mu=10, tolerancia=1e-6, max_iter=100):
@@ -36,6 +37,67 @@ def metodo_barreira(funcao, restricoes, variaveis, ponto_inicial,
         if erro < tolerancia:
             break
     return ponto
+
+#Givaldo Cesar
+
+def metodo_gradiente(funcao, funcao_expressao, var_x, var_y, ponto_inicial, passo=1, tipo_otimizacao="minimo"):
+    # CONFIGURAÇÕES INICIAIS
+    max_iteracoes = 10000
+    tolerancia = 0.001
+    
+    #Calcula o gradiente
+    diff_x = sp.diff(funcao_expressao, var_x)
+    diff_y = sp.diff(funcao_expressao, var_y)
+    gradiente = sp.lambdify((var_x, var_y), [diff_x, diff_y], modules=['numpy'])
+
+    iteracao = 1
+    x_atual = np.array(ponto_inicial, dtype=float)
+    f_atual = funcao(x_atual)
+
+    while iteracao <= max_iteracoes:
+        # 1. Calcula o gradiente 
+        vetor_gradiente = np.array(gradiente(x_atual), dtype=float)
+        norma_gradiente = np.linalg.norm(vetor_gradiente)
+
+        #Encerra se o tamanho do vetor gradiente é menor q a tolerância
+        if norma_gradiente < tolerancia:
+            break
+            
+        if tipo_otimizacao == 'maximo':
+            direcao = vetor_gradiente
+        else:
+            direcao = -vetor_gradiente
+        
+        # 2. Segue apra o próximo ponto na direção do gradiente pela desigualdade de Armijo
+        passo_k = passo
+        fator_reducao = 0.5
+        c = 0.0001 # Amortecimento
+
+        # produto interno do gradiente com a direção
+        produto_interno = np.dot(gradiente, direcao)
+
+        while passo_k > 1e-8:
+            f_atual = funcao(x_atual)
+            x_possivel = x + (passo_k * direcao)
+            f_possivel = funcao(x_possivel)
+
+            # Desigualdade de armijo
+            if tipo_otimizacao == 'maximo':
+                if f_possivel >= f_atual + (c * passo_k * produto_interno):
+                    break 
+            else:
+                if f_possivel <= f_atual + (c * passo_k * produto_interno):
+                    break
+            
+            passo_k = passo_k * fator_reducao
+
+        x_atual = x_atual + (passo_k * direcao)
+        f_atual = funcao(x_atual)
+        iteracao += 1
+    
+    # retorna o X otimo e F(X)
+    return x_atual, f_atual
+
 #Gustavo Barcelos
 def exibir_graficos(lista_resultados, funcao_alvo):
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6))
@@ -83,6 +145,7 @@ def exibir_graficos(lista_resultados, funcao_alvo):
     ax2.grid(True)
     plt.tight_layout()
     plt.show()
+
 #Guilherme Versiani Araújo
 def exibir_grafico_3d(lista_resultados, funcao_alvo):
     fig = plt.figure(figsize=(12, 8))
